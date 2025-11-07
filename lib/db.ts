@@ -15,6 +15,7 @@ export async function createEvent(event: Omit<Event, "created_at">) {
       start_hour: event.start_hour,
       end_hour: event.end_hour,
       timezone: event.timezone,
+      duration: event.duration,
     })
     .select()
     .single()

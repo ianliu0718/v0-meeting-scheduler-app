@@ -20,6 +20,7 @@ export interface Event {
   start_hour: number
   end_hour: number
   timezone: string
+  duration: number
   created_at: Date
 }
 

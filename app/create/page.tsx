@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/lib/i18n/language-context"
+import { createEvent } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -79,24 +80,19 @@ export default function CreateEventPage() {
         created_at: new Date(),
       }
 
-      localStorage.setItem(`event_${eventId}`, JSON.stringify(eventData))
-
-      // also embed minimal event payload in URL for share across browsers
-      try {
-        const compact = {
-          t: eventData.title,
-          d: eventData.description,
-          sd: startDate.toISOString(),
-          ed: endDate.toISOString(),
-          sh: eventData.start_hour,
-          eh: eventData.end_hour,
-          tz: eventData.timezone,
-        }
-        const encoded = typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(compact))) : ''
-        router.push(`/event/${eventId}?d=${encoded}`)
-      } catch {
-        router.push(`/event/${eventId}`)
-      }
+      // 寫入 Supabase
+      await createEvent({
+        id: eventId,
+        title: eventData.title,
+        description: eventData.description,
+        start_date: startDate,
+        end_date: endDate,
+        start_hour: eventData.start_hour,
+        end_hour: eventData.end_hour,
+        timezone: eventData.timezone,
+        duration: 60, // 必填，或可由 UI 傳入
+      })
+      router.push(`/event/${eventId}`)
     } catch (error) {
       console.error("[v0] Error creating event:", error)
       alert(t("common.error"))
