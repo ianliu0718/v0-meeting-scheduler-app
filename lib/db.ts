@@ -134,8 +134,38 @@ export async function upsertParticipant(
       body.auth_token = participant.password  // 直接使用使用者輸入的密碼
     }
     const { data, error } = await supabase.from('participants').insert(body).select().single()
-    if (error) throw error
-    return { data, isNew: true }
+    if (!error) return { data, isNew: true }
+
+    // 若因唯一鍵衝突（例如 (event_id, name) unique）導致 409，轉為更新流程
+    const isConflict = (err: any) => err?.status === 409 || err?.code === '23505' || (typeof err?.message === 'string' && err.message.toLowerCase().includes('duplicate'))
+    if (!isConflict(error)) throw error
+
+    // 讀取既有紀錄並走既有更新邏輯
+    const { data: exist2, error: findErr2 } = await supabase
+      .from('participants')
+      .select('id, locked, auth_token')
+      .eq('event_id', eventId)
+      .eq('name', participant.name)
+      .maybeSingle()
+    if (findErr2) throw findErr2
+    if (!exist2) throw error
+
+    if (exist2.locked && exist2.auth_token) {
+      if (!participant.password || exist2.auth_token !== participant.password) {
+        throw new Error('NAME_LOCKED')
+      }
+    }
+    const updateBody: any = {
+      email: participant.email,
+      availability,
+    }
+    if (participant.lock && participant.password) {
+      updateBody.locked = true
+      updateBody.auth_token = participant.password
+    }
+    const { data: upd, error: updErr } = await supabase.from('participants').update(updateBody).eq('id', exist2.id).select().single()
+    if (updErr) throw updErr
+    return { data: upd, isNew: false }
   }
 
   // 已存在的參與者：檢查是否鎖定
