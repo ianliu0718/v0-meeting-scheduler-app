@@ -38,15 +38,7 @@ export default function EventPage() {
   const [copied, setCopied] = useState(false)
   const refreshTimer = useRef<NodeJS.Timeout | null>(null)
 
-  // 互動偏好（localStorage 持久化）
-  const [longPress, setLongPress] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('opt.longPressToDrag') === '1'
-  })
-  const [previewMode, setPreviewMode] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('opt.previewBeforeCommit') === '1'
-  })
+  // 已移除「長按拖曳 / 預覽提交」選項，統一採用即時拖曳提交行為
 
   // Supabase Realtime 訂閱 participants 表
   useEffect(() => {
@@ -206,27 +198,6 @@ export default function EventPage() {
               <h2 className="text-lg sm:text-xl font-semibold mb-2">{t("event.markAvailability")}</h2>
               <p className="text-xs sm:text-sm text-muted-foreground mb-3">{t("event.clickDrag")}</p>
 
-              {/* 互動選項：長按拖曳 / 預覽模式 */}
-              <div className="mb-3 flex flex-col sm:flex-row gap-2 sm:items-center text-xs sm:text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <input
-                    id="opt-longpress"
-                    type="checkbox"
-                    checked={longPress}
-                    onChange={(e) => { setLongPress(e.target.checked); localStorage.setItem('opt.longPressToDrag', e.target.checked ? '1' : '0') }}
-                  />
-                  <label htmlFor="opt-longpress" className="cursor-pointer">{t('event.longPressToDrag')}</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="opt-preview"
-                    type="checkbox"
-                    checked={previewMode}
-                    onChange={(e) => { setPreviewMode(e.target.checked); localStorage.setItem('opt.previewBeforeCommit', e.target.checked ? '1' : '0') }}
-                  />
-                  <label htmlFor="opt-preview" className="cursor-pointer">{t('event.previewBeforeCommit')}</label>
-                </div>
-              </div>
 
               <AvailabilityCalendar
                 startDate={event.start_date}
@@ -239,9 +210,6 @@ export default function EventPage() {
                 heatmapData={participants.length > 0 ? getHeatmapData() : undefined}
                 maxParticipants={participants.length}
                 onSlotFocus={(date, hour) => setFocusSlot({ date, hour })}
-                longPressToDrag={longPress}
-                previewBeforeCommit={previewMode}
-                longPressDelayMs={250}
               />
             </Card>
 
@@ -342,8 +310,8 @@ export default function EventPage() {
           </div>
 
           <div className="space-y-6">
-            <ParticipantList participants={participants} />
             <BestTimesList participants={participants} startHour={event.start_hour} endHour={event.end_hour} />
+            <ParticipantList participants={participants} />
           </div>
         </div>
       </div>
