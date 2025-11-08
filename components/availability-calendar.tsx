@@ -109,6 +109,46 @@ export function AvailabilityCalendar({
     onSlotsChange(newSlots)
   }
 
+  // 整欄選擇（該日期的所有時段）
+  const toggleDateColumn = (date: Date) => {
+    if (readOnly || !onSlotsChange) return
+    // 檢查該日期是否所有時段都已選擇
+    const allSelected = hours.every(h => isSlotSelectedBase(date, h))
+    
+    if (allSelected) {
+      // 全部取消
+      const newSlots = selectedSlots.filter(
+        slot => slot.date.toDateString() !== date.toDateString()
+      )
+      onSlotsChange(newSlots)
+    } else {
+      // 全部選擇
+      const existingSlots = selectedSlots.filter(
+        slot => slot.date.toDateString() !== date.toDateString()
+      )
+      const newDaySlots = hours.map(h => ({ date: new Date(date), hour: h }))
+      onSlotsChange([...existingSlots, ...newDaySlots])
+    }
+  }
+
+  // 整列選擇（該時段的所有日期）
+  const toggleHourRow = (hour: number) => {
+    if (readOnly || !onSlotsChange) return
+    // 檢查該時段是否所有日期都已選擇
+    const allSelected = dates.every(d => isSlotSelectedBase(d, hour))
+    
+    if (allSelected) {
+      // 全部取消
+      const newSlots = selectedSlots.filter(slot => slot.hour !== hour)
+      onSlotsChange(newSlots)
+    } else {
+      // 全部選擇
+      const existingSlots = selectedSlots.filter(slot => slot.hour !== hour)
+      const newHourSlots = dates.map(d => ({ date: new Date(d), hour }))
+      onSlotsChange([...existingSlots, ...newHourSlots])
+    }
+  }
+
   const scheduleCommit = () => {
     if (!onSlotsChange) return
     // 預覽模式中拖曳時不提交，等放手再一次性提交
@@ -269,23 +309,29 @@ export function AvailabilityCalendar({
   const pointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || e.pointerType !== 'touch') return
     const hit = getCellFromPoint(e.clientX, e.clientY)
-    if (!hit) return
 
     if (isDragging) {
-      applyDragOnCell(hit.date, hit.hour)
+      if (hit) {
+        applyDragOnCell(hit.date, hit.hour)
+      }
+      // 防止拖曳時觸發瀏覽器的滾動
+      e.preventDefault()
       return
     }
 
-    // 長按等待期間：若主要是水平移動則取消長按等待（讓使用者可以滑動捲動）
+    // 長按等待期間：若移動超過閾值（任何方向）則取消長按，允許滾動
     if (awaitingLongPressRef.current && touchStartPointRef.current) {
-      const dx = e.clientX - touchStartPointRef.current.x
-      const dy = e.clientY - touchStartPointRef.current.y
-      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+      const dx = Math.abs(e.clientX - touchStartPointRef.current.x)
+      const dy = Math.abs(e.clientY - touchStartPointRef.current.y)
+      // 移動超過 8px（水平或垂直）視為滑動意圖
+      if (dx > 8 || dy > 8) {
         if (longPressTimerRef.current != null) {
           clearTimeout(longPressTimerRef.current)
           longPressTimerRef.current = null
         }
         awaitingLongPressRef.current = false
+        touchStartHitRef.current = null
+        touchStartPointRef.current = null
       }
     }
   }
@@ -360,21 +406,41 @@ export function AvailabilityCalendar({
 
           <div className="grid" style={{ gridTemplateColumns: `var(--time-col) repeat(${dates.length}, 1fr)` }}>
             <div className="bg-muted border-b border-r p-2 text-xs font-medium sticky left-0 z-10" />
-            {dates.map((date, i) => (
-              <div key={i} className="bg-muted border-b p-2 text-center text-xs font-medium">
-                <div className="hidden sm:block">{t(`calendar.${dayNames[date.getDay()]}`)}</div>
-                <div className="sm:hidden">{t(`calendar.${dayNames[date.getDay()]}`).slice(0, 1)}</div>
-                <div className="text-muted-foreground mt-1">
-                  {date.getMonth() + 1}/{date.getDate()}
+            {dates.map((date, i) => {
+              const allSelected = hours.every(h => isSlotSelectedBase(date, h))
+              return (
+                <div 
+                  key={i} 
+                  className={cn(
+                    "bg-muted border-b p-2 text-center text-xs font-medium cursor-pointer hover:bg-muted/80 transition-colors",
+                    allSelected && "bg-primary/10"
+                  )}
+                  onClick={() => !readOnly && toggleDateColumn(date)}
+                  title={allSelected ? "點擊取消此日所有時段" : "點擊選擇此日所有時段"}
+                >
+                  <div className="hidden sm:block">{t(`calendar.${dayNames[date.getDay()]}`)}</div>
+                  <div className="sm:hidden">{t(`calendar.${dayNames[date.getDay()]}`).slice(0, 1)}</div>
+                  <div className="text-muted-foreground mt-1">
+                    {date.getMonth() + 1}/{date.getDate()}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
-            {hours.map((hour) => (
-              <div key={hour} className="contents">
-                <div className="bg-muted border-r p-1.5 lg:p-1 text-[10px] sm:text-xs font-medium text-center sticky left-0 z-10">
-                  {hour.toString().padStart(2, "0")}:00
-                </div>
+            {hours.map((hour) => {
+              const allSelected = dates.every(d => isSlotSelectedBase(d, hour))
+              return (
+                <div key={hour} className="contents">
+                  <div 
+                    className={cn(
+                      "bg-muted border-r p-1.5 lg:p-1 text-[10px] sm:text-xs font-medium text-center sticky left-0 z-10 cursor-pointer hover:bg-muted/80 transition-colors",
+                      allSelected && "bg-primary/10"
+                    )}
+                    onClick={() => !readOnly && toggleHourRow(hour)}
+                    title={allSelected ? "點擊取消此時段所有日期" : "點擊選擇此時段所有日期"}
+                  >
+                    {hour.toString().padStart(2, "0")}:00
+                  </div>
                 {dates.map((date, i) => {
                   const key = getSlotKey(date, hour)
                   const selected = isSlotSelectedRender(date, hour)
@@ -415,7 +481,8 @@ export function AvailabilityCalendar({
                   )
                 })}
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
