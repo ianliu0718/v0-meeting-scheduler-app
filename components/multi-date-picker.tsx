@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
@@ -41,6 +41,12 @@ export function MultiDatePicker({ value, onChange }: MultiDatePickerProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  // Drag-to-select state
+  const [isDragging, setIsDragging] = useState(false)
+  const dragStartIndex = useRef<number | null>(null)
+  const originSelectionRef = useRef<Date[]>([])
+  const hasDragged = useRef(false)  // 追蹤是否真的拖曳過
+
   const toggleDate = (date: Date) => {
     const dateWithoutTime = new Date(date)
     dateWithoutTime.setHours(0, 0, 0, 0)
@@ -65,6 +71,44 @@ export function MultiDatePicker({ value, onChange }: MultiDatePickerProps) {
   const goToNextWeek = () => {
     setCurrentWeekStart(addDays(currentWeekStart, 7))
   }
+
+  const dateEquals = (a: Date, b: Date) => isSameDay(a, b)
+  const uniqByDay = (arr: Date[]) => {
+    const result: Date[] = []
+    arr.forEach((d) => {
+      if (!result.some((x) => dateEquals(x, d))) result.push(d)
+    })
+    return result
+  }
+
+  const handleMouseDown = (index: number) => {
+    const date = dates[index]
+    if (isBefore(date, today)) return
+    setIsDragging(true)
+    dragStartIndex.current = index
+    originSelectionRef.current = [...value]
+    hasDragged.current = false  // 重置拖曳標記
+  }
+
+  const handleMouseEnter = (index: number) => {
+    if (!isDragging || dragStartIndex.current === null) return
+    hasDragged.current = true  // 標記為已拖曳
+    const start = Math.min(dragStartIndex.current, index)
+    const end = Math.max(dragStartIndex.current, index)
+    const range = dates.slice(start, end + 1).filter((d) => !isBefore(d, today))
+    onChange(uniqByDay([...originSelectionRef.current, ...range]).sort((a, b) => a.getTime() - b.getTime()))
+  }
+
+  useEffect(() => {
+    const onUp = () => {
+      if (isDragging) {
+        setIsDragging(false)
+        dragStartIndex.current = null
+      }
+    }
+    window.addEventListener('mouseup', onUp)
+    return () => window.removeEventListener('mouseup', onUp)
+  }, [isDragging])
 
   return (
     <Card className="p-4 sm:p-6">
@@ -149,7 +193,13 @@ export function MultiDatePicker({ value, onChange }: MultiDatePickerProps) {
                 <button
                   key={index}
                   type="button"
-                  onClick={() => !isPast && toggleDate(date)}
+                  onMouseDown={() => handleMouseDown(index)}
+                  onMouseEnter={() => handleMouseEnter(index)}
+                  onClick={() => {
+                    if (!isPast && !hasDragged.current) {
+                      toggleDate(date)
+                    }
+                  }}
                   disabled={isPast}
                   className={`
                     aspect-square rounded-lg text-sm sm:text-base font-medium

@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useLanguage } from "@/lib/i18n/language-context"
-import { getEvent, getParticipants, createParticipant } from "@/lib/db"
+import { getEvent, getParticipants, upsertParticipant } from "@/lib/db"
 import { createClient } from "@/lib/supabase/client"
 import type { Event, Participant, TimeSlot } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,9 @@ export default function EventPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
+  const [lockName, setLockName] = useState(false)
+  const [password, setPassword] = useState("")
+  const [focusSlot, setFocusSlot] = useState<{ date: Date; hour: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const refreshTimer = useRef<NodeJS.Timeout | null>(null)
@@ -73,32 +76,49 @@ export default function EventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || selectedSlots.length === 0) return
+    
+    // 如果要鎖定名稱但未輸入密碼
+    if (lockName && !password.trim()) {
+      alert(t("event.passwordRequired"))
+      return
+    }
+    
     setLoading(true)
     try {
-      await createParticipant(eventId, {
+      await upsertParticipant(eventId, {
         name: name.trim(),
         email: email.trim() || undefined,
         availability: selectedSlots,
+        lock: lockName,
+        password: lockName ? password.trim() : undefined,
       })
       setName("")
       setEmail("")
+      setPassword("")
       setSelectedSlots([])
+      setLockName(false)
       // 送出後立即刷新
       const parts = await getParticipants(eventId)
       setParticipants(parts)
       alert(t("common.success"))
     } catch (error) {
       console.error("[v0] Error submitting availability:", error)
-      alert(t("common.error"))
+      if ((error as Error).message === 'NAME_LOCKED') {
+        alert(t('event.nameLocked'))
+      } else {
+        alert(t("common.error"))
+      }
     } finally {
       setLoading(false)
     }
   }
 
+  
+
   const getHeatmapData = () => {
-    const heatmap = new Map<string, number>()
-    participants.forEach((participant) => {
-      participant.availability.forEach((slot) => {
+    const heatmap: Map<string, number> = new Map()
+    participants.forEach((participant: Participant) => {
+      participant.availability.forEach((slot: TimeSlot) => {
         const key = `${slot.date.toISOString().split("T")[0]}-${slot.hour}`
         heatmap.set(key, (heatmap.get(key) || 0) + 1)
       })
@@ -148,14 +168,51 @@ export default function EventPage() {
               <AvailabilityCalendar
                 startDate={event.start_date}
                 endDate={event.end_date}
+                selectedDates={event.selected_dates}
                 startHour={event.start_hour}
                 endHour={event.end_hour}
                 selectedSlots={selectedSlots}
                 onSlotsChange={setSelectedSlots}
                 heatmapData={participants.length > 0 ? getHeatmapData() : undefined}
                 maxParticipants={participants.length}
+                onSlotFocus={(date, hour) => setFocusSlot({ date, hour })}
               />
             </Card>
+
+            {focusSlot && (
+              <Card className="p-4 sm:p-6">
+                <h3 className="text-sm sm:text-base font-semibold mb-2">
+                  {t("event.slotInfo")} {`${focusSlot.date.getMonth() + 1}/${focusSlot.date.getDate()} ${focusSlot.hour.toString().padStart(2, '0')}:00`}
+                </h3>
+                {(() => {
+                  const key = `${focusSlot.date.toISOString().split('T')[0]}-${focusSlot.hour}`
+                  const available = participants.filter((p: Participant) => p.availability.some((s: TimeSlot) => `${s.date.toISOString().split('T')[0]}-${s.hour}` === key))
+                  const unavailable = participants.filter((p: Participant) => !available.includes(p))
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <div className="font-medium mb-1 text-green-600">{t("event.available")}</div>
+                        <ul className="list-disc pl-5">
+                          {available.length === 0 && <li className="text-muted-foreground">{t("event.none")}</li>}
+                          {available.map((p: Participant) => (
+                            <li key={p.id}>{p.name}{p.locked ? ' 🔒' : ''}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="font-medium mb-1 text-red-600">{t("event.unavailable")}</div>
+                        <ul className="list-disc pl-5">
+                          {unavailable.length === 0 && <li className="text-muted-foreground">{t("event.none")}</li>}
+                          {unavailable.map((p: Participant) => (
+                            <li key={p.id}>{p.name}{p.locked ? ' 🔒' : ''}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </Card>
+            )}
 
             <Card className="p-4 sm:p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -170,6 +227,29 @@ export default function EventPage() {
                       required
                       className="text-base"
                     />
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="lockName"
+                        type="checkbox"
+                        checked={lockName}
+                        onChange={(e) => setLockName(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="lockName" className="text-xs text-muted-foreground cursor-pointer">{t("event.lockName")}</Label>
+                    </div>
+                    {lockName && (
+                      <div className="mt-2">
+                        <Input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={t("event.enterPassword")}
+                          className="text-sm"
+                          required={lockName}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">{t("event.passwordPrompt")}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("event.yourEmail")}</Label>

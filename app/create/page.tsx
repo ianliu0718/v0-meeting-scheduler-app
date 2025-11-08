@@ -87,6 +87,7 @@ export default function CreateEventPage() {
         description: eventData.description,
         start_date: startDate,
         end_date: endDate,
+        selected_dates: sortedDates,  // 傳入不連續日期
         start_hour: eventData.start_hour,
         end_hour: eventData.end_hour,
         timezone: eventData.timezone,
