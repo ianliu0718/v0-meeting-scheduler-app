@@ -73,6 +73,10 @@ export function AvailabilityCalendar({
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   // 拖曳階段：idle | pending(長按中) | active(拖曳中)
   const dragPhaseRef = useRef<"idle" | "pending" | "active">("idle")
+  // 啟動後第一個 move 強制鎖定（避免偶發滾動協商）
+  const firstMoveAfterActivationRef = useRef<boolean>(false)
+  // 指標 ID（pointer capture 用）
+  const lastPointerIdRef = useRef<number>(0)
 
   // 優先使用 selectedDates，否則用 startDate 到 endDate 的連續日期
   const dates: Date[] = selectedDates && selectedDates.length > 0 
@@ -258,6 +262,7 @@ export function AvailabilityCalendar({
     // 記錄拖曳啟動時間
     dragStartTimeRef.current = Date.now()
     dragPhaseRef.current = "active"
+    firstMoveAfterActivationRef.current = true
     
     // 先設置所有狀態
     isDraggingRef.current = true // 立即設置 ref
@@ -268,6 +273,7 @@ export function AvailabilityCalendar({
     
     // 立即直接操作 DOM 禁用所有觸控滾動（不依賴 state） + 鎖定 body 滾動
     if (containerRef.current) {
+      try { if (lastPointerIdRef.current) containerRef.current.setPointerCapture(lastPointerIdRef.current) } catch {}
       containerRef.current.style.touchAction = 'none'
     }
     if (bodyOverflowPrevRef.current == null) {
@@ -362,6 +368,7 @@ export function AvailabilityCalendar({
     // 恢復觸控滾動
     if (containerRef.current) {
       containerRef.current.style.touchAction = 'pan-x pan-y'
+      try { containerRef.current.releasePointerCapture(lastPointerIdRef.current) } catch {}
     }
     // 恢復 body 滾動
     if (bodyOverflowPrevRef.current != null) {
@@ -415,8 +422,9 @@ export function AvailabilityCalendar({
       e.preventDefault()
     }
 
-    touchStartPointRef.current = { x: e.clientX, y: e.clientY }
-    touchStartHitRef.current = hit
+  touchStartPointRef.current = { x: e.clientX, y: e.clientY }
+  touchStartHitRef.current = hit
+  lastPointerIdRef.current = e.pointerId
 
     if (longPressToDrag) {
       awaitingLongPressRef.current = true
@@ -426,9 +434,15 @@ export function AvailabilityCalendar({
         if (!awaitingLongPressRef.current || dragPhaseRef.current !== 'pending') return
         awaitingLongPressRef.current = false
         longPressTimerRef.current = null
+        if (containerRef.current) {
+          try { containerRef.current.setPointerCapture(lastPointerIdRef.current) } catch {}
+        }
         startDragAt(hit.date, hit.hour)
       }, Math.max(200, Math.min(300, longPressDelayMs)))
     } else {
+      if (containerRef.current) {
+        try { containerRef.current.setPointerCapture(lastPointerIdRef.current) } catch {}
+      }
       startDragAt(hit.date, hit.hour)
     }
   }
@@ -470,6 +484,10 @@ export function AvailabilityCalendar({
       }
       
       // 立即阻止滾動，不論任何情況
+      if (firstMoveAfterActivationRef.current) {
+        if (containerRef.current) containerRef.current.style.touchAction = 'none'
+        firstMoveAfterActivationRef.current = false
+      }
       e.preventDefault()
       e.stopPropagation()
       
@@ -484,42 +502,15 @@ export function AvailabilityCalendar({
 
     const hit = getCellFromPoint(e.clientX, e.clientY)
 
-    // 長按等待期間：若移動超過閾值則取消長按，允許滾動
-  if (dragPhaseRef.current === 'pending' && awaitingLongPressRef.current && touchStartPointRef.current) {
-      const dx = Math.abs(e.clientX - touchStartPointRef.current.x)
-      const dy = Math.abs(e.clientY - touchStartPointRef.current.y)
-      
-      // 優先判斷垂直滾動意圖（網頁滾動）：垂直移動 > 5px 且大於水平移動
-      if (dy > 5 && dy > dx) {
-        // 明確的垂直滾動意圖，取消長按
-        if (longPressTimerRef.current != null) {
-          clearTimeout(longPressTimerRef.current)
-          longPressTimerRef.current = null
-        }
-        awaitingLongPressRef.current = false
-        dragPhaseRef.current = 'idle'
-        touchStartHitRef.current = null
-        touchStartPointRef.current = null
-        // 允許滾動
-        return
+    // 長按等待期間：不取消，保持 pending，並阻止捲動（需求更新：長按後無論水平/垂直移動都應進入拖曳，不應提前取消）
+    if (dragPhaseRef.current === 'pending' && awaitingLongPressRef.current) {
+      if (containerRef.current) {
+        // 預先鎖定觸控滾動，避免瀏覽器在等待期間開始捲動
+        containerRef.current.style.touchAction = 'none'
       }
-      
-      // 其他方向移動超過 8px 也取消
-      if (dx > 8 || dy > 8) {
-        if (longPressTimerRef.current != null) {
-          clearTimeout(longPressTimerRef.current)
-          longPressTimerRef.current = null
-        }
-        awaitingLongPressRef.current = false
-        dragPhaseRef.current = 'idle'
-        touchStartHitRef.current = null
-        touchStartPointRef.current = null
-        // 允許滾動
-        return
-      }
-      
-      // 還在等待長按，且移動距離不大：阻止預設行為（防止瀏覽器開始滾動）
       e.preventDefault()
+      e.stopPropagation()
+      return
     }
   }
 
