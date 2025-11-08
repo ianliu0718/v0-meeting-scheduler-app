@@ -21,6 +21,9 @@ interface AvailabilityCalendarProps {
   longPressToDrag?: boolean // 手機長按 200~300ms 才進入拖曳模式
   previewBeforeCommit?: boolean // 拖曳中僅顯示預覽，放手才提交
   longPressDelayMs?: number // 自訂長按延遲，預設 250ms
+  // 縮放設定
+  minZoom?: number
+  maxZoom?: number
 }
 
 export function AvailabilityCalendar({
@@ -35,9 +38,11 @@ export function AvailabilityCalendar({
   maxParticipants = 1,
   readOnly = false,
   onSlotFocus,
-  longPressToDrag = false,
+  longPressToDrag = true,
   previewBeforeCommit = false,
   longPressDelayMs = 250,
+  minZoom = 0.7,
+  maxZoom = 1.6,
 }: AvailabilityCalendarProps) {
   const { t } = useLanguage()
   const [isDragging, setIsDragging] = useState(false)
@@ -49,6 +54,30 @@ export function AvailabilityCalendar({
   const pendingAddDetailsRef = useRef<Map<string, { date: Date; hour: number }>>(new Map())
   const pendingRemoveRef = useRef<Set<string>>(new Set())
   const rafIdRef = useRef<number | null>(null)
+  // 視覺提示（長按進入拖曳時）
+  const [hint, setHint] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false })
+
+  // 兩指縮放（調整日期欄寬度）
+  const [zoom, setZoom] = useState(1)
+  const [showZoomHud, setShowZoomHud] = useState(false)
+  const hudTimerRef = useRef<number | null>(null)
+  const baseDateCol = 96 // px
+  const touchesRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const isPinchingRef = useRef(false)
+  const initialDistRef = useRef<number | null>(null)
+  const startZoomRef = useRef(1)
+
+  const setZoomWithHud = (value: number) => {
+    setZoom(value)
+    setShowZoomHud(true)
+    if (hudTimerRef.current != null) {
+      clearTimeout(hudTimerRef.current)
+    }
+    hudTimerRef.current = window.setTimeout(() => {
+      setShowZoomHud(false)
+      hudTimerRef.current = null
+    }, 800)
+  }
 
   // 手機長按相關
   const longPressTimerRef = useRef<number | null>(null)
@@ -222,6 +251,23 @@ export function AvailabilityCalendar({
   // pointer 事件（手機）
   const pointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || e.pointerType !== 'touch') return
+    // 紀錄觸控指標
+    touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (touchesRef.current.size === 2) {
+      // 進入雙指縮放模式
+      if (longPressTimerRef.current != null) {
+        clearTimeout(longPressTimerRef.current)
+        longPressTimerRef.current = null
+      }
+      awaitingLongPressRef.current = false
+      isPinchingRef.current = true
+      const pts = Array.from(touchesRef.current.values())
+      const dx = pts[0].x - pts[1].x
+      const dy = pts[0].y - pts[1].y
+      initialDistRef.current = Math.hypot(dx, dy)
+      startZoomRef.current = zoom
+      return
+    }
     const hit = getCellFromPoint(e.clientX, e.clientY)
     if (!hit) return
 
@@ -233,6 +279,14 @@ export function AvailabilityCalendar({
       longPressTimerRef.current = window.setTimeout(() => {
         awaitingLongPressRef.current = false
         longPressTimerRef.current = null
+        // 震動提示（若支援）
+        try { (navigator as any)?.vibrate?.(10) } catch {}
+        // 顯示淡出提示圈
+        if (touchStartPointRef.current && containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          setHint({ x: touchStartPointRef.current.x - rect.left, y: touchStartPointRef.current.y - rect.top, visible: true })
+          window.setTimeout(() => setHint((h) => ({ ...h, visible: false })), 600)
+        }
         startDragAt(hit.date, hit.hour)
       }, Math.max(200, Math.min(300, longPressDelayMs)))
     } else {
@@ -242,6 +296,24 @@ export function AvailabilityCalendar({
 
   const pointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || e.pointerType !== 'touch') return
+    // 更新觸控點位置
+    if (touchesRef.current.has(e.pointerId)) {
+      touchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    }
+
+    if (isPinchingRef.current) {
+      const pts = Array.from(touchesRef.current.values())
+      if (pts.length >= 2 && initialDistRef.current) {
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        const scale = dist / initialDistRef.current
+        const next = Math.min(maxZoom, Math.max(minZoom, startZoomRef.current * scale))
+        setZoomWithHud(next)
+      }
+      return
+    }
+
     const hit = getCellFromPoint(e.clientX, e.clientY)
     if (!hit) return
 
@@ -250,12 +322,11 @@ export function AvailabilityCalendar({
       return
     }
 
-    // 長按等待期間：大幅位移則取消長按（避免誤觸）
+    // 長按等待期間：若主要是水平移動則取消長按等待（讓使用者可以滑動捲動）
     if (awaitingLongPressRef.current && touchStartPointRef.current) {
       const dx = e.clientX - touchStartPointRef.current.x
       const dy = e.clientY - touchStartPointRef.current.y
-      const dist2 = dx * dx + dy * dy
-      if (dist2 > 8 * 8) {
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
         if (longPressTimerRef.current != null) {
           clearTimeout(longPressTimerRef.current)
           longPressTimerRef.current = null
@@ -267,6 +338,14 @@ export function AvailabilityCalendar({
 
   const pointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'touch') return
+    // 移除觸控點
+    if (touchesRef.current.has(e.pointerId)) {
+      touchesRef.current.delete(e.pointerId)
+    }
+    if (touchesRef.current.size < 2) {
+      isPinchingRef.current = false
+      initialDistRef.current = null
+    }
 
     // 若正在等待長按且未進入拖曳 => 當作單擊切換
     if (awaitingLongPressRef.current && touchStartHitRef.current) {
@@ -317,13 +396,50 @@ export function AvailabilityCalendar({
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={containerRef}
-          className="inline-block min-w-full border rounded-lg overflow-hidden [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] touch-none"
-          style={{ minWidth: dates.length > 3 ? "720px" : "auto" }}
+          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] touch-pan-x select-none"
+          style={{
+            minWidth: dates.length > 0 ? `${Math.max(720, 56 + dates.length * Math.round(baseDateCol * zoom))}px` : "auto",
+          } as React.CSSProperties}
           onPointerDown={pointerDown}
           onPointerMove={pointerMove}
           onPointerUp={pointerUp}
         >
-          <div className="grid" style={{ gridTemplateColumns: `var(--time-col) repeat(${dates.length}, 1fr)` }}>
+          {/* 重置縮放按鈕 */}
+          {zoom !== 1 && (
+            <button
+              type="button"
+              className="absolute right-2 top-2 z-30 text-[11px] px-2 py-1 rounded bg-white/80 backdrop-blur border shadow hover:bg-white"
+              onClick={() => setZoom(1)}
+              title="Reset zoom"
+            >
+              ↺ Reset
+            </button>
+          )}
+
+          {/* 長按進入拖曳的淡出提示圈 */}
+          {hint.visible && (
+            <div className="pointer-events-none absolute inset-0 z-20">
+              <div
+                className="absolute w-6 h-6 rounded-full bg-primary/20 ring-2 ring-primary/60 animate-ping"
+                style={{ left: hint.x, top: hint.y, transform: "translate(-50%, -50%)" }}
+              />
+            </div>
+          )}
+
+          {/* 縮放 HUD（%） */}
+          {showZoomHud && (
+            <div className="absolute left-2 top-2 z-30 text-[11px] px-2 py-1 rounded bg-black/60 text-white">
+              {Math.round(zoom * 100)}%
+            </div>
+          )}
+
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `var(--time-col) repeat(${dates.length}, var(--date-col))`,
+              ['--date-col' as any]: `${Math.round(baseDateCol * zoom)}px`,
+            }}
+          >
             <div className="bg-muted border-b border-r p-2 text-xs font-medium sticky left-0 z-10" />
             {dates.map((date, i) => (
               <div key={i} className="bg-muted border-b p-2 text-center text-xs font-medium">
