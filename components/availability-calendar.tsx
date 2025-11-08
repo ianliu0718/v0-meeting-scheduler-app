@@ -61,6 +61,10 @@ export function AvailabilityCalendar({
   const touchStartHitRef = useRef<{ date: Date; hour: number } | null>(null)
   // 避免行動裝置觸控結束後產生合成滑鼠事件，導致又被切換回去
   const ignoreMouseUntilRef = useRef<number>(0)
+  
+  // 自動邊緣滾動
+  const autoScrollIntervalRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // 優先使用 selectedDates，否則用 startDate 到 endDate 的連續日期
   const dates: Date[] = selectedDates && selectedDates.length > 0 
@@ -248,9 +252,49 @@ export function AvailabilityCalendar({
     dragModeRef.current = isSlotSelectedBase(date, hour) ? "remove" : "add"
     onSlotFocus?.(date, hour)
     applyDragOnCell(date, hour)
-    // 進入拖曳模式時，禁用垂直滾動但保留水平滾動
+    // 進入拖曳模式時，完全禁用滾動
     if (containerRef.current) {
-      containerRef.current.style.touchAction = 'pan-x'
+      containerRef.current.style.touchAction = 'none'
+    }
+  }
+
+  // 檢查並執行自動邊緣滾動
+  const checkAndAutoScroll = (clientX: number, clientY: number) => {
+    if (!scrollContainerRef.current) return
+    
+    const scrollContainer = scrollContainerRef.current
+    const rect = scrollContainer.getBoundingClientRect()
+    const edgeThreshold = 50 // 距離邊緣 50px 時觸發自動滾動
+    const scrollSpeed = 5 // 每次滾動的像素
+    
+    // 清除現有的自動滾動
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current)
+      autoScrollIntervalRef.current = null
+    }
+    
+    let scrollX = 0
+    
+    // 檢查水平滾動（左右邊緣）
+    if (clientX < rect.left + edgeThreshold) {
+      scrollX = -scrollSpeed // 向左滾動
+    } else if (clientX > rect.right - edgeThreshold) {
+      scrollX = scrollSpeed // 向右滾動
+    }
+    
+    // 如果需要滾動，啟動定時器
+    if (scrollX !== 0) {
+      autoScrollIntervalRef.current = window.setInterval(() => {
+        scrollContainer.scrollLeft += scrollX
+      }, 16) // 約 60fps
+    }
+  }
+
+  // 停止自動滾動
+  const stopAutoScroll = () => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current)
+      autoScrollIntervalRef.current = null
     }
   }
 
@@ -273,6 +317,8 @@ export function AvailabilityCalendar({
     setDragStart(null)
     dragModeRef.current = null
     touchedCellsRef.current.clear()
+    // 停止自動滾動
+    stopAutoScroll()
     // 恢復雙向觸控滾動
     if (containerRef.current) {
       containerRef.current.style.touchAction = 'pan-x pan-y'
@@ -284,7 +330,11 @@ export function AvailabilityCalendar({
   useEffect(() => {
     const handleGlobalMouseUp = () => finishDrag()
     document.addEventListener("mouseup", handleGlobalMouseUp)
-    return () => document.removeEventListener("mouseup", handleGlobalMouseUp)
+    return () => {
+      document.removeEventListener("mouseup", handleGlobalMouseUp)
+      // 清理自動滾動
+      stopAutoScroll()
+    }
   }, [])
 
   // 追蹤最新的 selectedSlots 供 rAF 使用，避免閉包讀到舊值
@@ -344,6 +394,8 @@ export function AvailabilityCalendar({
       if (hit) {
         applyDragOnCell(hit.date, hit.hour)
       }
+      // 檢查是否需要自動邊緣滾動
+      checkAndAutoScroll(e.clientX, e.clientY)
       // 防止拖曳時觸發瀏覽器的滾動
       e.preventDefault()
       return
@@ -447,7 +499,7 @@ export function AvailabilityCalendar({
         </div>
       )}
 
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div ref={scrollContainerRef} className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={containerRef}
           className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] select-none"
