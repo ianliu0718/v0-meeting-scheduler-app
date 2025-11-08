@@ -41,7 +41,11 @@ export function AvailabilityCalendar({
 }: AvailabilityCalendarProps) {
   const { t } = useLanguage()
   const [isDragging, setIsDragging] = useState(false)
+  const isDraggingRef = useRef(false) // 用 ref 立即追蹤拖曳狀態
   const [dragStart, setDragStart] = useState<{ date: Date; hour: number } | null>(null)
+  // 改為只用 DOM 直接控制 touch-action，避免 React state 時序造成奇偶失敗
+  // const [currentTouchAction, setCurrentTouchAction] = useState<string>("pan-x pan-y")
+  const bodyOverflowPrevRef = useRef<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // 追蹤最新的 selectedSlots，避免 rAF/事件閉包讀到舊值
   const selectedSlotsRef = useRef<TimeSlot[]>(selectedSlots)
@@ -51,16 +55,22 @@ export function AvailabilityCalendar({
   const pendingAddDetailsRef = useRef<Map<string, { date: Date; hour: number }>>(new Map())
   const pendingRemoveRef = useRef<Set<string>>(new Set())
   const rafIdRef = useRef<number | null>(null)
-  // 視覺提示（長按進入拖曳時）
+  // 視覺提示（拖曳啟動時）
   const [hint, setHint] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false })
 
-  // 手機長按相關
-  const longPressTimerRef = useRef<number | null>(null)
-  const awaitingLongPressRef = useRef(false)
+  // 手機觸控起點與命中資訊
   const touchStartPointRef = useRef<{ x: number; y: number } | null>(null)
   const touchStartHitRef = useRef<{ date: Date; hour: number } | null>(null)
   // 避免行動裝置觸控結束後產生合成滑鼠事件，導致又被切換回去
   const ignoreMouseUntilRef = useRef<number>(0)
+  
+  // 自動邊緣滾動
+  const autoScrollIntervalRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // 拖曳階段：idle（待機）| dragging（拖曳中）
+  const dragPhaseRef = useRef<"idle" | "dragging">("idle")
+  // 指標 ID（pointer capture 用）
+  const lastPointerIdRef = useRef<number>(0)
 
   // 優先使用 selectedDates，否則用 startDate 到 endDate 的連續日期
   const dates: Date[] = selectedDates && selectedDates.length > 0 
@@ -149,6 +159,28 @@ export function AvailabilityCalendar({
     }
   }
 
+  // 全選/取消全選
+  const toggleAllSlots = () => {
+    if (readOnly || !onSlotsChange) return
+    // 檢查是否所有時段都已選擇
+    const totalSlots = dates.length * hours.length
+    const allSelected = selectedSlots.length === totalSlots
+    
+    if (allSelected) {
+      // 全部取消
+      onSlotsChange([])
+    } else {
+      // 全部選擇
+      const allSlots: TimeSlot[] = []
+      dates.forEach(date => {
+        hours.forEach(hour => {
+          allSlots.push({ date: new Date(date), hour })
+        })
+      })
+      onSlotsChange(allSlots)
+    }
+  }
+
   const scheduleCommit = () => {
     if (!onSlotsChange) return
     // 預覽模式中拖曳時不提交，等放手再一次性提交
@@ -220,12 +252,86 @@ export function AvailabilityCalendar({
 
   const startDragAt = (date: Date, hour: number) => {
     if (readOnly) return
+    
+    dragPhaseRef.current = "dragging"
+    
+    // 先設置所有狀態
+    isDraggingRef.current = true // 立即設置 ref
     setIsDragging(true)
     setDragStart({ date, hour })
     touchedCellsRef.current = new Set()
     dragModeRef.current = isSlotSelectedBase(date, hour) ? "remove" : "add"
+    
+    // 立即捕獲指標並禁用觸控滾動
+    if (containerRef.current) {
+      try { if (lastPointerIdRef.current) containerRef.current.setPointerCapture(lastPointerIdRef.current) } catch {}
+      containerRef.current.style.touchAction = 'none'
+    }
+    if (bodyOverflowPrevRef.current == null) {
+      bodyOverflowPrevRef.current = document.body.style.overflow || ''
+      document.body.style.overflow = 'hidden'
+    }
+    
+    // 震動提示
+    try { 
+      if ((navigator as any)?.vibrate) {
+        (navigator as any).vibrate(10)
+      }
+    } catch {}
+    
+    // 顯示視覺提示
+    if (touchStartPointRef.current && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setHint({ 
+        x: touchStartPointRef.current.x - rect.left, 
+        y: touchStartPointRef.current.y - rect.top, 
+        visible: true 
+      })
+      window.setTimeout(() => setHint((h) => ({ ...h, visible: false })), 600)
+    }
+    
     onSlotFocus?.(date, hour)
     applyDragOnCell(date, hour)
+  }
+
+  // 檢查並執行自動邊緣滾動
+  const checkAndAutoScroll = (clientX: number, clientY: number) => {
+    if (!scrollContainerRef.current) return
+    
+    const scrollContainer = scrollContainerRef.current
+    const rect = scrollContainer.getBoundingClientRect()
+    const edgeThreshold = 50 // 距離邊緣 50px 時觸發自動滾動
+    const scrollSpeed = 5 // 每次滾動的像素
+    
+    // 清除現有的自動滾動
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current)
+      autoScrollIntervalRef.current = null
+    }
+    
+    let scrollX = 0
+    
+    // 檢查水平滾動（左右邊緣）
+    if (clientX < rect.left + edgeThreshold) {
+      scrollX = -scrollSpeed // 向左滾動
+    } else if (clientX > rect.right - edgeThreshold) {
+      scrollX = scrollSpeed // 向右滾動
+    }
+    
+    // 如果需要滾動，啟動定時器
+    if (scrollX !== 0) {
+      autoScrollIntervalRef.current = window.setInterval(() => {
+        scrollContainer.scrollLeft += scrollX
+      }, 16) // 約 60fps
+    }
+  }
+
+  // 停止自動滾動
+  const stopAutoScroll = () => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current)
+      autoScrollIntervalRef.current = null
+    }
   }
 
   const handleMouseDown = (date: Date, hour: number) => {
@@ -243,10 +349,23 @@ export function AvailabilityCalendar({
   }
 
   const finishDrag = () => {
+    isDraggingRef.current = false // 立即清除 ref
     setIsDragging(false)
     setDragStart(null)
     dragModeRef.current = null
     touchedCellsRef.current.clear()
+    // 停止自動滾動
+    stopAutoScroll()
+    // 恢復觸控滾動
+    if (containerRef.current) {
+      containerRef.current.style.touchAction = 'pan-x pan-y'
+      try { containerRef.current.releasePointerCapture(lastPointerIdRef.current) } catch {}
+    }
+    // 恢復 body 滾動
+    if (bodyOverflowPrevRef.current != null) {
+  document.body.style.overflow = bodyOverflowPrevRef.current ?? ''
+      bodyOverflowPrevRef.current = null
+    }
     // 放手時提交（預覽模式亦在此提交）
     scheduleCommit()
   }
@@ -254,7 +373,11 @@ export function AvailabilityCalendar({
   useEffect(() => {
     const handleGlobalMouseUp = () => finishDrag()
     document.addEventListener("mouseup", handleGlobalMouseUp)
-    return () => document.removeEventListener("mouseup", handleGlobalMouseUp)
+    return () => {
+      document.removeEventListener("mouseup", handleGlobalMouseUp)
+      // 清理自動滾動
+      stopAutoScroll()
+    }
   }, [])
 
   // 追蹤最新的 selectedSlots 供 rAF 使用，避免閉包讀到舊值
@@ -278,60 +401,51 @@ export function AvailabilityCalendar({
   // pointer 事件（手機）
   const pointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || e.pointerType !== 'touch') return
-    // 設定一段時間忽略隨後的合成滑鼠事件
-    ignoreMouseUntilRef.current = Date.now() + 600
+    
     const hit = getCellFromPoint(e.clientX, e.clientY)
     if (!hit) return
-
+    
+    // 設定一段時間忽略隨後的合成滑鼠事件
+    ignoreMouseUntilRef.current = Date.now() + 600
+    
+    // 阻止預設行為，避免瀏覽器啟動滾動手勢
+    e.preventDefault()
+    
+    // 記錄觸控起點
     touchStartPointRef.current = { x: e.clientX, y: e.clientY }
     touchStartHitRef.current = hit
-
-    if (longPressToDrag) {
-      awaitingLongPressRef.current = true
-      longPressTimerRef.current = window.setTimeout(() => {
-        awaitingLongPressRef.current = false
-        longPressTimerRef.current = null
-        // 震動提示（若支援）
-        try { (navigator as any)?.vibrate?.(10) } catch {}
-        // 顯示淡出提示圈
-        if (touchStartPointRef.current && containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect()
-          setHint({ x: touchStartPointRef.current.x - rect.left, y: touchStartPointRef.current.y - rect.top, visible: true })
-          window.setTimeout(() => setHint((h) => ({ ...h, visible: false })), 600)
-        }
-        startDragAt(hit.date, hit.hour)
-      }, Math.max(200, Math.min(300, longPressDelayMs)))
-    } else {
-      startDragAt(hit.date, hit.hour)
-    }
+    lastPointerIdRef.current = e.pointerId
+    
+    // 等待 pointerMove 判斷是拖曳還是單擊
   }
 
   const pointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (readOnly || e.pointerType !== 'touch') return
-    const hit = getCellFromPoint(e.clientX, e.clientY)
-
-    if (isDragging) {
+    
+    // 已在拖曳中：持續塗抹
+    if (isDraggingRef.current && dragPhaseRef.current === 'dragging') {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      const hit = getCellFromPoint(e.clientX, e.clientY)
       if (hit) {
         applyDragOnCell(hit.date, hit.hour)
       }
-      // 防止拖曳時觸發瀏覽器的滾動
-      e.preventDefault()
+      // 檢查是否需要自動邊緣滾動
+      checkAndAutoScroll(e.clientX, e.clientY)
       return
     }
 
-    // 長按等待期間：若移動超過閾值（任何方向）則取消長按，允許滾動
-    if (awaitingLongPressRef.current && touchStartPointRef.current) {
+    // 尚未啟動拖曳，檢查移動距離
+    if (touchStartPointRef.current && touchStartHitRef.current && !isDraggingRef.current) {
       const dx = Math.abs(e.clientX - touchStartPointRef.current.x)
       const dy = Math.abs(e.clientY - touchStartPointRef.current.y)
-      // 移動超過 8px（水平或垂直）視為滑動意圖
-      if (dx > 8 || dy > 8) {
-        if (longPressTimerRef.current != null) {
-          clearTimeout(longPressTimerRef.current)
-          longPressTimerRef.current = null
-        }
-        awaitingLongPressRef.current = false
-        touchStartHitRef.current = null
-        touchStartPointRef.current = null
+      
+      // 移動超過 5px：進入拖曳模式
+      if (dx >= 5 || dy >= 5) {
+        e.preventDefault()
+        e.stopPropagation()
+        startDragAt(touchStartHitRef.current.date, touchStartHitRef.current.hour)
       }
     }
   }
@@ -339,13 +453,16 @@ export function AvailabilityCalendar({
   const pointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'touch') return
 
-    // 若正在等待長按且未進入拖曳 => 當作單擊切換
-    if (awaitingLongPressRef.current && touchStartHitRef.current) {
-      if (longPressTimerRef.current != null) {
-        clearTimeout(longPressTimerRef.current)
-        longPressTimerRef.current = null
-      }
-      awaitingLongPressRef.current = false
+    // 正在拖曳：結束並提交
+    if (isDraggingRef.current && dragPhaseRef.current === 'dragging') {
+      finishDrag()
+      touchStartHitRef.current = null
+      touchStartPointRef.current = null
+      return
+    }
+
+    // 未進入拖曳（移動距離 < 5px）=> 當作單擊切換
+    if (touchStartHitRef.current && !isDraggingRef.current) {
       const hit = touchStartHitRef.current
       toggleSlot(hit.date, hit.hour)
       onSlotFocus?.(hit.date, hit.hour)
@@ -354,19 +471,59 @@ export function AvailabilityCalendar({
       return
     }
 
-    // 正在拖曳：結束並提交
-    if (isDragging) {
-      finishDrag()
-    }
+    // 清理
+    dragPhaseRef.current = 'idle'
+    touchStartHitRef.current = null
+    touchStartPointRef.current = null
+  }
 
+  const pointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'touch') return
+    
+    // 若正在拖曳，當作放手結束
+    if (isDraggingRef.current && dragPhaseRef.current === 'dragging') {
+      finishDrag()
+    } else {
+      // 非拖曳情境：確保釋放 capture 與觸控還原
+      if (containerRef.current) {
+        try { containerRef.current.releasePointerCapture(lastPointerIdRef.current) } catch {}
+        containerRef.current.style.touchAction = 'pan-x pan-y'
+      }
+      if (bodyOverflowPrevRef.current != null) {
+        document.body.style.overflow = bodyOverflowPrevRef.current ?? ''
+        bodyOverflowPrevRef.current = null
+      }
+    }
+    dragPhaseRef.current = 'idle'
     touchStartHitRef.current = null
     touchStartPointRef.current = null
   }
 
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
 
+  const totalSlots = dates.length * hours.length
+  const allSelected = selectedSlots.length === totalSlots
+
   return (
     <div className="w-full max-w-full lg:max-w-5xl mx-auto">
+      {/* 全選/取消全選按鈕 */}
+      {!readOnly && onSlotsChange && (
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            onClick={toggleAllSlots}
+            className="px-4 py-2 text-sm font-medium rounded-md border transition-colors hover:bg-muted"
+            title={allSelected ? "點擊取消所有時段" : "點擊選擇所有時段"}
+          >
+            {allSelected ? "✓ 取消全選" : "全選所有時段"}
+          </button>
+          {selectedSlots.length > 0 && (
+            <span className="text-sm text-muted-foreground">
+              已選擇 {selectedSlots.length} / {totalSlots} 個時段
+            </span>
+          )}
+        </div>
+      )}
+
       {heatmapData && (
         <div className="mb-4 flex items-center gap-4 text-sm flex-wrap">
           <span className="font-medium">{t("calendar.availability")}:</span>
@@ -385,14 +542,15 @@ export function AvailabilityCalendar({
         </div>
       )}
 
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div ref={scrollContainerRef} className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={containerRef}
-          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] touch-pan-x select-none"
+          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] select-none"
           style={{ minWidth: dates.length > 3 ? "720px" : "auto" }}
           onPointerDown={pointerDown}
           onPointerMove={pointerMove}
           onPointerUp={pointerUp}
+          onPointerCancel={pointerCancel}
         >
           {/* 長按進入拖曳的淡出提示圈 */}
           {hint.visible && (
