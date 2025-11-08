@@ -319,11 +319,22 @@ export function AvailabilityCalendar({
       return
     }
 
-    // 長按等待期間：若移動超過閾值（任何方向）則取消長按，允許滾動
+    // 長按等待期間：若移動超過閾值則取消長按，允許滾動
     if (awaitingLongPressRef.current && touchStartPointRef.current) {
       const dx = Math.abs(e.clientX - touchStartPointRef.current.x)
       const dy = Math.abs(e.clientY - touchStartPointRef.current.y)
-      // 移動超過 8px（水平或垂直）視為滑動意圖
+      // 優先判斷垂直滾動意圖（網頁滾動）：垂直移動 > 5px 且大於水平移動
+      if (dy > 5 && dy > dx) {
+        if (longPressTimerRef.current != null) {
+          clearTimeout(longPressTimerRef.current)
+          longPressTimerRef.current = null
+        }
+        awaitingLongPressRef.current = false
+        touchStartHitRef.current = null
+        touchStartPointRef.current = null
+        return
+      }
+      // 其他方向移動超過 8px 也取消
       if (dx > 8 || dy > 8) {
         if (longPressTimerRef.current != null) {
           clearTimeout(longPressTimerRef.current)
@@ -388,8 +399,8 @@ export function AvailabilityCalendar({
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={containerRef}
-          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] touch-pan-x select-none"
-          style={{ minWidth: dates.length > 3 ? "720px" : "auto" }}
+          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] select-none"
+          style={{ minWidth: dates.length > 3 ? "720px" : "auto", touchAction: "pan-y" }}
           onPointerDown={pointerDown}
           onPointerMove={pointerMove}
           onPointerUp={pointerUp}
