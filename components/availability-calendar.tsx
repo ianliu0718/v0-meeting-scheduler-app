@@ -71,6 +71,8 @@ export function AvailabilityCalendar({
   // 自動邊緣滾動
   const autoScrollIntervalRef = useRef<number | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // 拖曳階段：idle | pending(長按中) | active(拖曳中)
+  const dragPhaseRef = useRef<"idle" | "pending" | "active">("idle")
 
   // 優先使用 selectedDates，否則用 startDate 到 endDate 的連續日期
   const dates: Date[] = selectedDates && selectedDates.length > 0 
@@ -255,6 +257,7 @@ export function AvailabilityCalendar({
     
     // 記錄拖曳啟動時間
     dragStartTimeRef.current = Date.now()
+    dragPhaseRef.current = "active"
     
     // 先設置所有狀態
     isDraggingRef.current = true // 立即設置 ref
@@ -417,10 +420,12 @@ export function AvailabilityCalendar({
 
     if (longPressToDrag) {
       awaitingLongPressRef.current = true
+      dragPhaseRef.current = "pending"
       longPressTimerRef.current = window.setTimeout(() => {
+        // 確保仍在 pending 狀態且未被取消
+        if (!awaitingLongPressRef.current || dragPhaseRef.current !== 'pending') return
         awaitingLongPressRef.current = false
         longPressTimerRef.current = null
-        // 啟動拖曳（內部會處理震動和視覺提示）
         startDragAt(hit.date, hit.hour)
       }, Math.max(200, Math.min(300, longPressDelayMs)))
     } else {
@@ -433,7 +438,7 @@ export function AvailabilityCalendar({
     
     // 使用 ref 檢查拖曳狀態，立即生效
     // 關鍵：必須在最前面就檢查並阻止預設行為
-    if (isDraggingRef.current) {
+  if (isDraggingRef.current && dragPhaseRef.current === 'active') {
       // 檢測拖曳是否失效（啟動後 100ms 內有大幅度移動可能表示滾動已開始）
       const timeSinceDragStart = Date.now() - dragStartTimeRef.current
       if (timeSinceDragStart < 100 && touchStartPointRef.current) {
@@ -480,7 +485,7 @@ export function AvailabilityCalendar({
     const hit = getCellFromPoint(e.clientX, e.clientY)
 
     // 長按等待期間：若移動超過閾值則取消長按，允許滾動
-    if (awaitingLongPressRef.current && touchStartPointRef.current) {
+  if (dragPhaseRef.current === 'pending' && awaitingLongPressRef.current && touchStartPointRef.current) {
       const dx = Math.abs(e.clientX - touchStartPointRef.current.x)
       const dy = Math.abs(e.clientY - touchStartPointRef.current.y)
       
@@ -492,6 +497,7 @@ export function AvailabilityCalendar({
           longPressTimerRef.current = null
         }
         awaitingLongPressRef.current = false
+        dragPhaseRef.current = 'idle'
         touchStartHitRef.current = null
         touchStartPointRef.current = null
         // 允許滾動
@@ -505,6 +511,7 @@ export function AvailabilityCalendar({
           longPressTimerRef.current = null
         }
         awaitingLongPressRef.current = false
+        dragPhaseRef.current = 'idle'
         touchStartHitRef.current = null
         touchStartPointRef.current = null
         // 允許滾動
@@ -526,8 +533,9 @@ export function AvailabilityCalendar({
     }
 
     // 若正在等待長按且未進入拖曳 => 當作單擊切換
-    if (awaitingLongPressRef.current && touchStartHitRef.current && !isDraggingRef.current) {
+    if (dragPhaseRef.current === 'pending' && awaitingLongPressRef.current && touchStartHitRef.current && !isDraggingRef.current) {
       awaitingLongPressRef.current = false
+      dragPhaseRef.current = 'idle'
       const hit = touchStartHitRef.current
       toggleSlot(hit.date, hit.hour)
       onSlotFocus?.(hit.date, hit.hour)
@@ -537,12 +545,13 @@ export function AvailabilityCalendar({
     }
 
     // 正在拖曳：結束並提交
-    if (isDraggingRef.current) {
+    if (isDraggingRef.current && dragPhaseRef.current === 'active') {
       finishDrag()
     }
 
     // 完全清理所有狀態
     awaitingLongPressRef.current = false
+    if (dragPhaseRef.current !== 'active') dragPhaseRef.current = 'idle'
     touchStartHitRef.current = null
     touchStartPointRef.current = null
   }
