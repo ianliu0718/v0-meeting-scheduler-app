@@ -16,6 +16,7 @@ import { AvailabilityCalendar } from "@/components/availability-calendar"
 import { ParticipantList } from "@/components/participant-list"
 import { BestTimesList } from "@/components/best-times-list"
 import { Copy, Check } from "lucide-react"
+import QRCode from "react-qr-code"
 
 export default function EventPage() {
   const { t } = useLanguage()
@@ -30,6 +31,7 @@ export default function EventPage() {
   const [email, setEmail] = useState("")
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
   const [lockName, setLockName] = useState(false)
+  const [showQr, setShowQr] = useState(false)
   const [password, setPassword] = useState("")
   const [focusSlot, setFocusSlot] = useState<{ date: Date; hour: number } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -157,7 +159,23 @@ export default function EventPage() {
                 </>
               )}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowQr((prev) => !prev)}
+              className="w-full sm:w-auto bg-transparent"
+            >
+              {showQr ? t("event.hideQr") : t("event.showQr")}
+            </Button>
           </div>
+          {showQr && (
+            <div className="mt-4 p-4 border rounded-lg inline-block bg-muted/40">
+              <p className="text-xs mb-2 font-medium text-muted-foreground">{t("event.qrTitle")}</p>
+              <div className="bg-white p-2 rounded">
+                <QRCode value={typeof window !== 'undefined' ? window.location.href : ''} size={128} />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">

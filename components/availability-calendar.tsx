@@ -114,28 +114,23 @@ export function AvailabilityCalendar({
     return date ? { date, hour } : null
   }
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (readOnly) return
-    const t = e.touches[0]
-    if (!t) return
-    const hit = getCellFromPoint(t.clientX, t.clientY)
+  // 使用 passive-safe 的 pointer 事件取代原先的 touch + preventDefault，避免瀏覽器警告
+  const pointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (readOnly || e.pointerType !== 'touch') return
+    const hit = getCellFromPoint(e.clientX, e.clientY)
     if (!hit) return
-    e.preventDefault()
     handleMouseDown(hit.date, hit.hour)
   }
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging || readOnly) return
-    const t = e.touches[0]
-    if (!t) return
-    const hit = getCellFromPoint(t.clientX, t.clientY)
+  const pointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || readOnly || e.pointerType !== 'touch') return
+    const hit = getCellFromPoint(e.clientX, e.clientY)
     if (!hit) return
-    e.preventDefault()
     handleMouseEnter(hit.date, hit.hour)
   }
 
-  const handleTouchEnd = () => {
-    handleMouseUp()
+  const pointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') handleMouseUp()
   }
 
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
@@ -165,9 +160,9 @@ export function AvailabilityCalendar({
           ref={containerRef}
           className="inline-block min-w-full border rounded-lg overflow-hidden [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] touch-none"
           style={{ minWidth: dates.length > 3 ? "720px" : "auto" }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onPointerDown={pointerDown}
+          onPointerMove={pointerMove}
+          onPointerUp={pointerUp}
         >
           <div className="grid" style={{ gridTemplateColumns: `var(--time-col) repeat(${dates.length}, 1fr)` }}>
             <div className="bg-muted border-b border-r p-2 text-xs font-medium sticky left-0 z-10" />
