@@ -8,7 +8,7 @@ import { Header } from "@/components/header"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "TimeAlign - Find the Perfect Meeting Time",
+  title: "ScheduleTime - Find the Perfect Meeting Time",
   description: "Coordinate schedules effortlessly with our intuitive meeting scheduler",
     generator: 'v0.app'
 }

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, delivered: 0 })
     }
 
-    const appName = process.env.PUSH_APP_NAME || 'TimeAlign'
+  const appName = process.env.PUSH_APP_NAME || 'ScheduleTime'
     const payload = {
       title: title || `${appName} 更新通知`,
       body: message || '有新的參與者加入或資料更新',

@@ -3,7 +3,7 @@ import type { Language } from "../types"
 export const translations: Record<Language, Record<string, string>> = {
   en: {
     // App
-    "app.name": "TimeAlign",
+  "app.name": "ScheduleTime",
     "app.tagline": "Find the perfect time for your",
     "app.time": "time",
     "app.description": "Coordinate schedules effortlessly with our intuitive meeting scheduler",
@@ -24,7 +24,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.hero.title": "Find the Perfect Time",
     "home.hero.subtitle": "Coordinate schedules effortlessly with our intuitive meeting scheduler",
     "home.hero.cta": "Create Event",
-    "home.features.title": "Why Choose TimeAlign?",
+  "home.features.title": "Why Choose ScheduleTime?",
     "home.feature1.title": "Easy to Use",
     "home.feature1.description": "Simple drag-and-drop interface for marking availability",
     "home.feature2.title": "Real-time Updates",
@@ -140,7 +140,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "actions.confirm": "Confirm",
 
     // Guide
-    "guide.title": "How to Use TimeAlign",
+  "guide.title": "How to Use ScheduleTime",
     "guide.subtitle": "Simple steps to find the perfect meeting time",
     "guide.step": "Step",
     "guide.step1.title": "Create an Event",
@@ -170,7 +170,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   "zh-TW": {
     // App
-    "app.name": "TimeAlign",
+  "app.name": "ScheduleTime",
     "app.tagline": "找到完美的",
     "app.time": "時間",
     "app.description": "輕鬆協調時間安排的直覺式會議排程工具",
@@ -191,7 +191,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.hero.title": "找到完美時間",
     "home.hero.subtitle": "使用我們直覺的會議排程工具，輕鬆協調時間安排",
     "home.hero.cta": "建立活動",
-    "home.features.title": "為什麼選擇 TimeAlign？",
+  "home.features.title": "為什麼選擇 ScheduleTime？",
     "home.feature1.title": "簡單易用",
     "home.feature1.description": "簡單的拖放介面標記可用時間",
     "home.feature2.title": "即時更新",
@@ -307,7 +307,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "actions.confirm": "確認",
 
     // Guide
-    "guide.title": "如何使用 TimeAlign",
+  "guide.title": "如何使用 ScheduleTime",
     "guide.subtitle": "簡單步驟找到完美的會議時間",
     "guide.step": "步驟",
     "guide.step1.title": "建立活動",
@@ -337,7 +337,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   es: {
     // App
-    "app.name": "TimeAlign",
+  "app.name": "ScheduleTime",
     "app.tagline": "Encuentra el momento perfecto para tu",
     "app.time": "time",
     "app.description": "Coordina horarios sin esfuerzo con nuestro programador de reuniones intuitivo",
@@ -358,7 +358,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.hero.title": "Encuentra el Momento Perfecto",
     "home.hero.subtitle": "Coordina horarios sin esfuerzo con nuestro programador de reuniones intuitivo",
     "home.hero.cta": "Crear Evento",
-    "home.features.title": "¿Por qué elegir TimeAlign?",
+  "home.features.title": "¿Por qué elegir ScheduleTime?",
     "home.feature1.title": "Fácil de usar",
     "home.feature1.description": "Interfaz simple de arrastrar y soltar para marcar disponibilidad",
     "home.feature2.title": "Actualizaciones en tiempo real",
@@ -474,7 +474,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "actions.confirm": "Confirmar",
 
     // Guide
-    "guide.title": "Cómo Usar TimeAlign",
+  "guide.title": "Cómo Usar ScheduleTime",
     "guide.subtitle": "Pasos simples para encontrar el momento perfecto de reunión",
     "guide.step": "Paso",
     "guide.step1.title": "Crear un Evento",
@@ -505,7 +505,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   tl: {
     // App
-    "app.name": "TimeAlign",
+  "app.name": "ScheduleTime",
     "app.tagline": "Hanapin ang perpektong oras para sa iyong",
     "app.time": "time",
     "app.description":
@@ -528,7 +528,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.hero.subtitle":
       "Mag-coordinate ng mga iskedyul nang walang kahirap-hirap gamit ang aming intuitive na meeting scheduler",
     "home.hero.cta": "Gumawa ng Event",
-    "home.features.title": "Bakit Piliin ang TimeAlign?",
+  "home.features.title": "Bakit Piliin ang ScheduleTime?",
     "home.feature1.title": "Madaling Gamitin",
     "home.feature1.description": "Simpleng drag-and-drop interface para sa pagmarka ng availability",
     "home.feature2.title": "Real-time na Updates",
@@ -644,7 +644,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "actions.confirm": "Kumpirmahin",
 
     // Guide
-    "guide.title": "Paano Gamitin ang TimeAlign",
+  "guide.title": "Paano Gamitin ang ScheduleTime",
     "guide.subtitle": "Simpleng mga hakbang upang mahanap ang perpektong oras ng meeting",
     "guide.step": "Hakbang",
     "guide.step1.title": "Gumawa ng Event",
@@ -677,7 +677,7 @@ export const translations: Record<Language, Record<string, string>> = {
   },
   id: {
     // App
-    "app.name": "TimeAlign",
+  "app.name": "ScheduleTime",
     "app.tagline": "Temukan waktu yang sempurna untuk",
     "app.time": "time",
     "app.description": "Koordinasikan jadwal dengan mudah menggunakan penjadwal pertemuan intuitif kami",
@@ -698,7 +698,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.hero.title": "Temukan Waktu yang Sempurna",
     "home.hero.subtitle": "Koordinasikan jadwal dengan mudah menggunakan penjadwal pertemuan intuitif kami",
     "home.hero.cta": "Buat Acara",
-    "home.features.title": "Mengapa Memilih TimeAlign?",
+  "home.features.title": "Mengapa Memilih ScheduleTime?",
     "home.feature1.title": "Mudah Digunakan",
     "home.feature1.description": "Antarmuka drag-and-drop sederhana untuk menandai ketersediaan",
     "home.feature2.title": "Pembaruan Real-time",
@@ -814,7 +814,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "actions.confirm": "Konfirmasi",
 
     // Guide
-    "guide.title": "Cara Menggunakan TimeAlign",
+  "guide.title": "Cara Menggunakan ScheduleTime",
     "guide.subtitle": "Langkah sederhana untuk menemukan waktu pertemuan yang sempurna",
     "guide.step": "Langkah",
     "guide.step1.title": "Buat Acara",

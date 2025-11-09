@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'ENDPOINT_NOT_FOUND' }, { status: 404 })
     }
 
-    const appName = process.env.PUSH_APP_NAME || 'TimeAlign'
+  const appName = process.env.PUSH_APP_NAME || 'ScheduleTime'
     const payload = {
       title: title || `${appName} 單裝置測試` ,
       body: message || '這是一則單裝置推播測試',

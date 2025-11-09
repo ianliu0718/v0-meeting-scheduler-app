@@ -8,7 +8,7 @@
 ```
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=你的VAPID公鑰
 VAPID_PRIVATE_KEY=你的VAPID私鑰
-PUSH_APP_NAME=TimeAlign
+PUSH_APP_NAME=ScheduleTime
 SUPABASE_SERVICE_ROLE_KEY=（可選，用於伺服端 upsert push_subscriptions）
 ```
 
