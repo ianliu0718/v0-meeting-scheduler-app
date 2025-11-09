@@ -172,27 +172,29 @@ export default function EventPage() {
           )}
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <p className="text-xs sm:text-sm text-muted-foreground">{t("event.shareLink")}</p>
-            <Button variant="outline" size="sm" onClick={handleCopyLink} className="w-full sm:w-auto bg-transparent">
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  {t("event.linkCopied")}
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2" />
-                  {t("event.copyLink")}
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowQr((prev) => !prev)}
-              className="w-full sm:w-auto bg-transparent"
-            >
-              {showQr ? t("event.hideQr") : t("event.showQr")}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1 sm:flex-initial sm:w-auto bg-transparent text-xs sm:text-sm px-3 py-1.5 h-8">
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    {t("event.linkCopied")}
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    {t("event.copyLink")}
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowQr((prev) => !prev)}
+                className="flex-1 sm:flex-initial sm:w-auto bg-transparent text-xs sm:text-sm px-3 py-1.5 h-8"
+              >
+                {showQr ? t("event.hideQr") : t("event.showQr")}
+              </Button>
+            </div>
             {/* 純 Realtime 模式：不顯示推播啟用/狀態 UI */}
           </div>
           {/* 移除最新通知卡片（推播），保留下方活動動態（Realtime） */}
