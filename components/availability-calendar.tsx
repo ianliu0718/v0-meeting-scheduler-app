@@ -595,9 +595,9 @@ export function AvailabilityCalendar({
       <div ref={scrollContainerRef} className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={containerRef}
-          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] [--slot-size:clamp(16px,4vw,37px)] select-none"
-          // slot 再縮小 15%（19px -> 16px, 4.7vw -> 4vw, 44px -> 37px），同時控制寬度與高度達成正方形
-          style={{ minWidth: dates.length > 3 ? "720px" : "auto" }}
+          className="inline-block min-w-full border rounded-lg overflow-hidden relative [--time-col:56px] md:[--time-col:56px] lg:[--time-col:48px] select-none"
+          // 還原為非正方形樣式，透過高度變數控制每列高度
+          style={{ minWidth: dates.length > 3 ? "720px" : "auto", ['--slot-h' as any]: 'clamp(22px, 5.5vw, 44px)' }}
           onPointerDown={pointerDown}
           onPointerMove={pointerMove}
           onPointerUp={pointerUp}
@@ -665,7 +665,7 @@ export function AvailabilityCalendar({
                     <div
                       key={`${i}-${hour}`}
                       className={cn(
-                        "border-b border-r p-0.5 cursor-pointer transition-colors relative",
+                        "border-b border-r p-1 cursor-pointer transition-colors relative",
                         readOnly && "cursor-default",
                         !readOnly && "hover:bg-accent",
                         selected && !showHeatmap && "bg-primary/60 md:bg-primary/40 hover:bg-primary/50 ring-2 ring-primary/80",
@@ -674,13 +674,7 @@ export function AvailabilityCalendar({
                         previewAdd && !baseSelected && "ring-2 ring-dashed ring-primary/80",
                         previewRemove && baseSelected && "ring-2 ring-dashed ring-red-500/80"
                       )}
-                      style={{ 
-                        minHeight: 'var(--slot-size)', 
-                        height: 'var(--slot-size)', 
-                        minWidth: 'var(--slot-size)', 
-                        width: 'var(--slot-size)', 
-                        ...(showHeatmap && !selected ? { opacity: 0.2 + intensity * 0.8 } : {}) 
-                      }}
+                      style={{ minHeight: 'var(--slot-h)', ...(showHeatmap && !selected ? { opacity: 0.2 + intensity * 0.8 } : {}) }}
                       data-date-idx={i}
                       data-hour={hour}
                       onMouseDown={() => handleMouseDown(date, hour)}
@@ -689,7 +683,7 @@ export function AvailabilityCalendar({
                     >
                       {hasOverlap && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-[10px] sm:text-xs font-bold text-white drop-shadow-lg">✓</span>
+                          <span className="text-xs sm:text-sm font-bold text-white drop-shadow-lg">✓</span>
                         </div>
                       )}
                     </div>

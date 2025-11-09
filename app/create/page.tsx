@@ -153,7 +153,8 @@ export default function CreateEventPage() {
 
             <div className="space-y-3">
               <Label className="text-base font-medium">{t("create.timeRange")}</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* 強制手機與桌面皆為水平兩欄 */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startHour" className="text-sm text-muted-foreground">
                     {t("create.startTime")}

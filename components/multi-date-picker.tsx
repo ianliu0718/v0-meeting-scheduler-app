@@ -226,29 +226,26 @@ export function MultiDatePicker({ value, onChange }: MultiDatePickerProps) {
           </div>
         </div>
 
-        {/* Selected dates display - moved below calendar */}
+        {/* Selected dates display - single-row, horizontally scrollable chips */}
         {value.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               {t("create.selectedDates")}: {value.length}
             </span>
-            <div className="flex flex-wrap gap-2 flex-1">
-              {value.slice(0, 5).map((date, index) => (
-                <div
-                  key={index}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs whitespace-nowrap"
-                >
-                  <span>{format(date, "MMM d")}</span>
-                  <button type="button" onClick={() => toggleDate(date)} className="hover:bg-primary/20 rounded p-0.5">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {value.length > 5 && (
-                <span className="text-xs text-muted-foreground self-center whitespace-nowrap">
-                  +{value.length - 5} {t("create.moreDates")}
-                </span>
-              )}
+            <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar">
+              <div className="inline-flex gap-2 flex-nowrap">
+                {value.map((date, index) => (
+                  <div
+                    key={index}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs whitespace-nowrap"
+                  >
+                    <span>{format(date, "MMM d")}</span>
+                    <button type="button" onClick={() => toggleDate(date)} className="hover:bg-primary/20 rounded p-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={clearAll} className="h-7 text-xs whitespace-nowrap">
               {t("create.clearAll")}
