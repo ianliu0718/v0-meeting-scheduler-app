@@ -18,7 +18,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("language") as Language
-    if (saved && ["en", "zh-TW", "es", "tl", "id"].includes(saved)) {
+  if (saved && ["en", "zh-TW", "es", "tl"].includes(saved)) {
       setLanguageState(saved)
     } else {
       const browserLang = navigator.language
@@ -28,8 +28,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setLanguageState("es")
       } else if (browserLang.startsWith("tl")) {
         setLanguageState("tl")
-      } else if (browserLang.startsWith("id")) {
-        setLanguageState("id")
       } else {
         setLanguageState("en")
       }

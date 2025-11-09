@@ -36,4 +36,4 @@ export interface Notification {
   created_at: Date
 }
 
-export type Language = "en" | "zh-TW" | "es" | "tl" | "id"
+export type Language = "en" | "zh-TW" | "es" | "tl"

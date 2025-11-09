@@ -101,3 +101,14 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Languages
+
+This app (ScheduleTime) currently supports 4 languages:
+
+- English (`en`)
+- 繁體中文 (`zh-TW`)
+- Español (`es`)
+- Tagalog (`tl`)
+
+To change the default language at first load, the app auto-detects the browser language and falls back to English.

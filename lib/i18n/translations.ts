@@ -32,7 +32,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.feature3.title": "Smart Suggestions",
     "home.feature3.description": "Automatically find the best meeting times",
     "home.feature4.title": "Multi-language",
-    "home.feature4.description": "Support for 5 languages worldwide",
+  "home.feature4.description": "Support for 4 languages worldwide",
 
     // Create event
     "create.title": "Create New Event",
@@ -158,7 +158,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "guide.tips.title": "Pro Tips",
     "guide.tips.tip1": "💡 Use drag-and-drop to quickly select multiple time slots",
     "guide.tips.tip2": "🔔 Add your email to get notified when others respond",
-    "guide.tips.tip3": "🌍 The app supports 5 languages - switch anytime!",
+  "guide.tips.tip3": "🌍 The app supports 4 languages - switch anytime!",
     "guide.tips.tip4": "📱 Works perfectly on mobile, tablet, and desktop",
     "guide.cta": "Ready to get started?",
 
@@ -199,7 +199,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.feature3.title": "智慧建議",
     "home.feature3.description": "自動找出最佳會議時間",
     "home.feature4.title": "多國語言",
-    "home.feature4.description": "支援全球 5 種語言",
+  "home.feature4.description": "支援全球 4 種語言",
 
     // Create event
     "create.title": "建立新活動",
@@ -325,7 +325,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "guide.tips.title": "專業提示",
     "guide.tips.tip1": "💡 使用拖放功能快速選擇多個時段",
     "guide.tips.tip2": "🔔 新增您的電子郵件以在其他人回應時收到通知",
-    "guide.tips.tip3": "🌍 應用程式支援 5 種語言 - 隨時切換！",
+  "guide.tips.tip3": "🌍 應用程式支援 4 種語言 - 隨時切換！",
     "guide.tips.tip4": "📱 在手機、平板和電腦上都能完美運作",
     "guide.cta": "準備好開始了嗎？",
 
@@ -366,7 +366,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.feature3.title": "Sugerencias inteligentes",
     "home.feature3.description": "Encuentra automáticamente los mejores horarios de reunión",
     "home.feature4.title": "Multiidioma",
-    "home.feature4.description": "Soporte para 5 idiomas en todo el mundo",
+  "home.feature4.description": "Soporte para 4 idiomas en todo el mundo",
 
     // Create event
     "create.title": "Crear Nuevo Evento",
@@ -493,7 +493,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "guide.tips.title": "Consejos Pro",
     "guide.tips.tip1": "💡 Usa arrastrar y soltar para seleccionar rápidamente múltiples franjas horarias",
     "guide.tips.tip2": "🔔 Agrega tu email para recibir notificaciones cuando otros respondan",
-    "guide.tips.tip3": "🌍 La app soporta 5 idiomas - ¡cambia en cualquier momento!",
+  "guide.tips.tip3": "🌍 La app soporta 4 idiomas - ¡cambia en cualquier momento!",
     "guide.tips.tip4": "📱 Funciona perfectamente en móvil, tablet y escritorio",
     "guide.cta": "¿Listo para comenzar?",
 
@@ -536,7 +536,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "home.feature3.title": "Matalinong Mga Mungkahi",
     "home.feature3.description": "Awtomatikong hanapin ang pinakamahusay na oras ng meeting",
     "home.feature4.title": "Multi-language",
-    "home.feature4.description": "Suporta para sa 5 wika sa buong mundo",
+  "home.feature4.description": "Suporta para sa 4 na wika sa buong mundo",
 
     // Create event
     "create.title": "Gumawa ng Bagong Event",
@@ -665,7 +665,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "guide.tips.title": "Pro Tips",
     "guide.tips.tip1": "💡 Gumamit ng drag-and-drop upang mabilis na pumili ng maraming time slots",
     "guide.tips.tip2": "🔔 Idagdag ang iyong email upang makatanggap ng notification kapag tumugon ang iba",
-    "guide.tips.tip3": "🌍 Ang app ay sumusuporta sa 5 wika - magpalit anumang oras!",
+  "guide.tips.tip3": "🌍 Ang app ay sumusuporta sa 4 na wika - magpalit anumang oras!",
     "guide.tips.tip4": "📱 Perpektong gumagana sa mobile, tablet, at desktop",
     "guide.cta": "Handa nang magsimula?",
 
@@ -675,174 +675,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.success": "Tagumpay",
     "common.close": "Isara",
   },
-  id: {
-    // App
-  "app.name": "ScheduleTime",
-    "app.tagline": "Temukan waktu yang sempurna untuk",
-    "app.time": "time",
-    "app.description": "Koordinasikan jadwal dengan mudah menggunakan penjadwal pertemuan intuitif kami",
-
-    // Navigation
-    "nav.home": "Beranda",
-    "nav.guide": "Cara Menggunakan",
-    "nav.createEvent": "Buat Acara",
-
-    // Rotating words
-    "rotating.meeting": "pertemuan",
-    "rotating.group": "grup",
-    "rotating.event": "acara",
-    "rotating.gathering": "kumpul",
-    "rotating.party": "pesta",
-
-    // Home page
-    "home.hero.title": "Temukan Waktu yang Sempurna",
-    "home.hero.subtitle": "Koordinasikan jadwal dengan mudah menggunakan penjadwal pertemuan intuitif kami",
-    "home.hero.cta": "Buat Acara",
-  "home.features.title": "Mengapa Memilih ScheduleTime?",
-    "home.feature1.title": "Mudah Digunakan",
-    "home.feature1.description": "Antarmuka drag-and-drop sederhana untuk menandai ketersediaan",
-    "home.feature2.title": "Pembaruan Real-time",
-    "home.feature2.description": "Lihat respons peserta diperbarui secara instan",
-    "home.feature3.title": "Saran Cerdas",
-    "home.feature3.description": "Secara otomatis menemukan waktu pertemuan terbaik",
-    "home.feature4.title": "Multi-bahasa",
-    "home.feature4.description": "Dukungan untuk 5 bahasa di seluruh dunia",
-
-    // Create event
-    "create.title": "Buat Acara Baru",
-    "create.subtitle": "Isi detail untuk membuat acara penjadwalan baru",
-    "create.eventName": "Nama Acara",
-    "create.eventNamePlaceholder": "Pertemuan Tim",
-    "create.description": "Deskripsi",
-    "create.descriptionPlaceholder": "Diskusikan tujuan dan perencanaan Q1",
-    "create.dateRange": "Rentang Tanggal",
-    "create.startDate": "Tanggal Mulai",
-    "create.endDate": "Tanggal Selesai",
-    "create.timeRange": "Rentang Waktu",
-    "create.startTime": "Waktu Mulai",
-    "create.endTime": "Waktu Selesai",
-    "create.timezone": "Zona Waktu",
-    "create.selectTimezone": "Pilih zona waktu",
-    "create.submit": "Buat Acara",
-    "create.creating": "Membuat...",
-    "create.dateRanges": "Rentang Tanggal",
-    "create.dateRangesHint": "Tambahkan beberapa rentang tanggal jika ketersediaan Anda tidak berurutan",
-    "create.addDateRange": "Tambah Rentang Tanggal",
-    "create.addRange": "Tambah Rentang",
-    "create.selectDateRange": "Silakan pilih setidaknya satu rentang tanggal",
-    "create.selectedDates": "Dipilih",
-    "create.moreDates": "lagi",
-    "create.clearAll": "Hapus Semua",
-    "create.datePickerHint": "Klik pada tanggal untuk memilih beberapa hari yang tidak berurutan",
-
-    // Event page
-    "event.shareLink": "Bagikan tautan ini dengan peserta",
-    "event.copyLink": "Salin Tautan",
-    "event.linkCopied": "Tautan disalin!",
-    "event.yourName": "Nama Anda",
-    "event.yourNamePlaceholder": "Budi Santoso",
-    "event.yourEmail": "Email Anda (opsional)",
-    "event.yourEmailPlaceholder": "budi@example.com",
-    "event.emailNotice": "Terima notifikasi ketika orang lain memperbarui ketersediaan mereka",
-    "event.markAvailability": "Tandai Ketersediaan Anda",
-    "event.clickDrag": "Klik dan seret untuk memilih slot waktu",
-    "event.submit": "Kirim Ketersediaan",
-    "event.submitting": "Mengirim...",
-    "event.update": "Perbarui Ketersediaan",
-    "event.updating": "Memperbarui...",
-    "event.participants": "Peserta",
-    "event.noParticipants": "Belum ada peserta",
-    "event.bestTimes": "Waktu Terbaik",
-    "event.noBestTimes": "Belum cukup respons",
-    "event.availableOf": "dari",
-    "event.available": "tersedia",
-    "event.availableParticipants": "Peserta yang tersedia",
-    "event.viewDetails": "Lihat detail",
-    "event.slots": "slot",
-    "event.lockName": "Kunci nama dengan kata sandi",
-    "event.nameLocked": "Nama ini terkunci. Silakan masukkan kata sandi yang benar atau gunakan nama lain.",
-    "event.slotInfo": "Detail slot waktu:",
-    "event.unavailable": "Tidak tersedia",
-    "event.none": "Tidak ada",
-    "event.selectedCount": "Dipilih",
-    "event.passwordPrompt": "Masukkan kata sandi untuk mengunci nama ini:",
-    "event.passwordRequired": "Kata sandi diperlukan",
-    "event.enterPassword": "Masukkan kata sandi",
-    "event.showQr": "Tampilkan QR",
-    "event.hideQr": "Sembunyikan QR",
-    "event.qrTitle": "Pindai untuk buka di ponsel",
-    "event.longPressToDrag": "Tekan lama untuk mulai drag",
-    "event.previewBeforeCommit": "Pratinjau dulu, konfirmasi saat lepas",
-
-    // Calendar
-    "calendar.sun": "Min",
-    "calendar.mon": "Sen",
-    "calendar.tue": "Sel",
-    "calendar.wed": "Rab",
-    "calendar.thu": "Kam",
-    "calendar.fri": "Jum",
-    "calendar.sat": "Sab",
-    "calendar.availability": "Ketersediaan",
-    "calendar.low": "Rendah",
-    "calendar.medium": "Sedang",
-    "calendar.high": "Tinggi",
-
-    // Stats
-    "stats.participants": "Peserta",
-    "stats.avgSlots": "Rata-rata slot/orang",
-    "stats.bestOverlap": "Tumpang tindih terbaik",
-
-    // Participant details
-    "participant.submitted": "Dikirim",
-    "participant.availableSlots": "Slot Waktu Tersedia",
-    "participant.total": "Total",
-    "participant.slotsSelected": "slot waktu dipilih",
-
-    // Notifications
-    "notifications.title": "Notifikasi",
-    "notifications.markAllRead": "Tandai semua sebagai dibaca",
-    "notifications.noNew": "Tidak ada notifikasi baru",
-    "notifications.newParticipant": "bergabung",
-    "notifications.availabilityUpdate": "memperbarui ketersediaan mereka",
-
-    // Actions
-    "actions.export": "Ekspor",
-    "actions.import": "Impor",
-    "actions.share": "Bagikan",
-    "actions.delete": "Hapus",
-    "actions.cancel": "Batal",
-    "actions.confirm": "Konfirmasi",
-
-    // Guide
-  "guide.title": "Cara Menggunakan ScheduleTime",
-    "guide.subtitle": "Langkah sederhana untuk menemukan waktu pertemuan yang sempurna",
-    "guide.step": "Langkah",
-    "guide.step1.title": "Buat Acara",
-    "guide.step1.description": 'Klik "Buat Acara" dan isi nama acara, tanggal, dan rentang waktu',
-    "guide.step2.title": "Bagikan Tautan",
-    "guide.step2.description": "Salin tautan acara dan bagikan dengan semua peserta",
-    "guide.step3.title": "Tandai Ketersediaan Anda",
-    "guide.step3.description": "Klik dan seret pada kalender untuk memilih kapan Anda tersedia",
-    "guide.step4.title": "Kirim Respons Anda",
-    "guide.step4.description": "Masukkan nama dan email Anda, lalu klik kirim",
-    "guide.step5.title": "Lihat Respons",
-    "guide.step5.description":
-      "Lihat semua respons peserta dan peta panas yang menunjukkan ketersediaan yang tumpang tindih",
-    "guide.step6.title": "Temukan Waktu Terbaik",
-    "guide.step6.description": 'Periksa bagian "Waktu Terbaik" untuk melihat kapan kebanyakan orang tersedia',
-    "guide.tips.title": "Tips Pro",
-    "guide.tips.tip1": "💡 Gunakan drag-and-drop untuk dengan cepat memilih beberapa slot waktu",
-    "guide.tips.tip2": "🔔 Tambahkan email Anda untuk mendapatkan notifikasi ketika orang lain merespons",
-    "guide.tips.tip3": "🌍 Aplikasi mendukung 5 bahasa - ganti kapan saja!",
-    "guide.tips.tip4": "📱 Bekerja sempurna di ponsel, tablet, dan desktop",
-    "guide.cta": "Siap untuk memulai?",
-
-    // Common
-    "common.loading": "Memuat...",
-    "common.error": "Kesalahan",
-    "common.success": "Berhasil",
-    "common.close": "Tutup",
-  },
+  
 }
 
 export function getTranslation(lang: Language, key: string): string {
