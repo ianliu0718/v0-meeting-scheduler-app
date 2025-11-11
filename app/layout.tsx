@@ -5,6 +5,7 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Toaster } from "@/components/ui/toaster"
 import { Header } from "@/components/header"
+import { SponsorButton } from "@/components/sponsor-button"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -38,6 +39,7 @@ export default function RootLayout({
             <Header />
             <main className="flex-1">{children}</main>
             <Toaster />
+            <SponsorButton />
           </div>
         </Providers>
       </body>
